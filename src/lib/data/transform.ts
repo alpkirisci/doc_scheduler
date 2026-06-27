@@ -1,7 +1,7 @@
 // Pure data-shape + mapping helpers (no React / Supabase / DOM imports) so they
 // can be unit-tested directly and reused on server or client.
 
-import type { ScheduleInput } from "@/lib/scheduler/types";
+import type { GroupRule, ScheduleInput } from "@/lib/scheduler/types";
 
 // ---- DB row shapes (subset of columns we use) ----
 export interface ProjectRow {
@@ -22,6 +22,7 @@ export interface PersonRow {
   project_id: string;
   full_name: string;
   is_difficult: boolean;
+  target_total_duties: number | null;
 }
 export interface RoomRow {
   id: string;
@@ -40,13 +41,13 @@ export interface ShiftRow {
   is_night: boolean;
   sort_order: number;
 }
-export interface PairingRow {
+export interface RelationshipRow {
   id: string;
   project_id: string;
-  person_a: string;
-  person_b: string;
-  kind: "want_together" | "avoid_together" | "never_alone";
-  weight: number;
+  kind: "together" | "apart" | "never_alone";
+  member_ids: string[];
+  strength: number;
+  max_together: number | null;
   is_hard: boolean;
 }
 export interface AvailabilityRow {
@@ -72,7 +73,7 @@ export interface ProjectData {
   people: PersonRow[];
   rooms: RoomRow[];
   shifts: ShiftRow[];
-  pairings: PairingRow[];
+  relationships: RelationshipRow[];
   availability: AvailabilityRow[];
 }
 
@@ -94,17 +95,24 @@ export function eachNthDate(start: string, end: string, n: number): string[] {
   return out;
 }
 
-const PAIR_KIND = {
-  want_together: "want",
-  avoid_together: "avoid",
-  never_alone: "never_alone",
-} as const;
-
 /** Map a project's DB rows into the engine's ScheduleInput. */
 export function assembleScheduleInput(d: ProjectData): ScheduleInput {
   const interval = d.project.settings?.intervalDays ?? 1;
+  const groupRules: GroupRule[] = d.relationships.map((r) => ({
+    members: r.member_ids,
+    kind: r.kind,
+    strength: r.strength,
+    maxTogether: r.max_together ?? undefined,
+    hard: r.is_hard,
+  }));
+
   return {
-    people: d.people.map((p) => ({ id: p.id, name: p.full_name, isDifficult: p.is_difficult })),
+    people: d.people.map((p) => ({
+      id: p.id,
+      name: p.full_name,
+      isDifficult: p.is_difficult,
+      targetDuties: p.target_total_duties ?? undefined,
+    })),
     rooms: d.rooms
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)
@@ -128,13 +136,10 @@ export function assembleScheduleInput(d: ProjectData): ScheduleInput {
     unavailability: d.availability
       .filter((a) => a.kind === "unavailable")
       .map((a) => ({ personId: a.person_id, date: a.the_date, shiftId: a.shift_def_id ?? undefined })),
-    pairRules: d.pairings.map((p) => ({
-      a: p.person_a,
-      b: p.person_b,
-      kind: PAIR_KIND[p.kind],
-      weight: p.weight,
-      hard: p.is_hard,
-    })),
+    preferOff: d.availability
+      .filter((a) => a.kind === "prefer_off")
+      .map((a) => ({ personId: a.person_id, date: a.the_date, shiftId: a.shift_def_id ?? undefined })),
+    groupRules,
     restHoursMin: d.project.rest_hours_min,
     maxDutiesPerDay: d.project.max_duties_per_day,
     weights: d.project.settings?.weights,

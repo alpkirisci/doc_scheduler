@@ -9,9 +9,9 @@ import type { Assignment, ScheduleInput, SolveResult } from "@/lib/scheduler/typ
 import {
   assembleScheduleInput,
   type AvailabilityRow,
-  type PairingRow,
   type PersonRow,
   type ProjectRow,
+  type RelationshipRow,
   type RoomRow,
   type ScheduleRow,
   type ShiftRow,
@@ -19,9 +19,9 @@ import {
 
 export type {
   AvailabilityRow,
-  PairingRow,
   PersonRow,
   ProjectRow,
+  RelationshipRow,
   RoomRow,
   ScheduleRow,
   ShiftRow,
@@ -80,7 +80,8 @@ async function listChild<T>(table: string, projectId: string): Promise<T[]> {
 export const listPeople = (p: string) => listChild<PersonRow>("people", p);
 export const listRooms = (p: string) => listChild<RoomRow>("rooms", p);
 export const listShifts = (p: string) => listChild<ShiftRow>("shift_defs", p);
-export const listPairings = (p: string) => listChild<PairingRow>("pairing_rules", p);
+export const listRelationships = (p: string) =>
+  listChild<RelationshipRow>("relationship_rules", p);
 export const listAvailability = (p: string) => listChild<AvailabilityRow>("availability", p);
 
 export async function insertRow<T extends object>(table: string, row: T): Promise<void> {
@@ -94,15 +95,15 @@ export async function deleteRow(table: string, id: string): Promise<void> {
 
 // ----------------------------- assemble engine input -----------------------
 export async function loadScheduleInput(projectId: string): Promise<ScheduleInput> {
-  const [project, people, rooms, shifts, pairings, availability] = await Promise.all([
+  const [project, people, rooms, shifts, relationships, availability] = await Promise.all([
     getProject(projectId),
     listPeople(projectId),
     listRooms(projectId),
     listShifts(projectId),
-    listPairings(projectId),
+    listRelationships(projectId),
     listAvailability(projectId),
   ]);
-  return assembleScheduleInput({ project, people, rooms, shifts, pairings, availability });
+  return assembleScheduleInput({ project, people, rooms, shifts, relationships, availability });
 }
 
 // ----------------------------- shift presets -------------------------------

@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CalendarHeart, Loader2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { Button, inputClass } from "@/components/ui";
+import { LangToggle } from "@/components/LangToggle";
 
 export default function LoginPage() {
   const { t } = useI18n();
-  const router = useRouter();
   const configured = isSupabaseConfigured();
 
   const [mode, setMode] = useState<"in" | "up">("in");
@@ -32,8 +33,8 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push("/app");
-        router.refresh();
+        // Full navigation so the freshly-set auth cookie reaches the middleware.
+        window.location.assign("/app");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -43,61 +44,70 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4">
-      <Link href="/" className="mb-6 text-sm text-slate-500 hover:underline">
-        ← {t.appName}
-      </Link>
-      <h1 className="text-2xl font-bold">{mode === "in" ? t.auth.signInTitle : t.auth.signUpTitle}</h1>
+    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-4">
+      <div className="mb-6 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2 font-bold">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white">
+            <CalendarHeart className="h-4 w-4" />
+          </span>
+          {t.appName}
+        </Link>
+        <LangToggle />
+      </div>
 
-      {!configured && (
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          {t.auth.notConfigured}
-        </p>
-      )}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-bold">{mode === "in" ? t.auth.signInTitle : t.auth.signUpTitle}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t.tagline}</p>
 
-      <form onSubmit={submit} className="mt-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-600">{t.auth.email}</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-600">{t.auth.password}</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-        </div>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-        {info && <p className="text-sm text-emerald-700">{info}</p>}
+        {!configured && (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            {t.auth.notConfigured}
+          </p>
+        )}
+
+        <form onSubmit={submit} className="mt-5 space-y-4">
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">{t.auth.email}</span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputClass + " mt-1"}
+              placeholder="ornek@hastane.com"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">{t.auth.password}</span>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputClass + " mt-1"}
+              placeholder="••••••••"
+            />
+          </label>
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {info && <p className="text-sm text-emerald-700">{info}</p>}
+          <Button type="submit" disabled={busy || !configured} className="w-full">
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {busy ? t.auth.working : mode === "in" ? t.auth.signIn : t.auth.signUp}
+          </Button>
+        </form>
+
         <button
-          type="submit"
-          disabled={busy || !configured}
-          className="w-full rounded-lg bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+          onClick={() => {
+            setMode(mode === "in" ? "up" : "in");
+            setError(null);
+            setInfo(null);
+          }}
+          className="mt-4 w-full text-center text-sm text-slate-500 hover:text-indigo-600"
         >
-          {busy ? t.auth.working : mode === "in" ? t.auth.signIn : t.auth.signUp}
+          {mode === "in" ? t.auth.needAccount : t.auth.haveAccount}
         </button>
-      </form>
-
-      <button
-        onClick={() => {
-          setMode(mode === "in" ? "up" : "in");
-          setError(null);
-          setInfo(null);
-        }}
-        className="mt-4 text-sm text-slate-600 hover:underline"
-      >
-        {mode === "in" ? t.auth.needAccount : t.auth.haveAccount}
-      </button>
+      </div>
     </main>
   );
 }

@@ -71,21 +71,16 @@ export async function seedDemoProject(): Promise<string> {
   );
   if (sErr) throw sErr;
 
-  // pairing rules
-  if (demo.pairRules && demo.pairRules.length) {
-    const kindMap = {
-      want: "want_together",
-      avoid: "avoid_together",
-      never_alone: "never_alone",
-    } as const;
-    const { error: prErr } = await supabase.from("pairing_rules").insert(
-      demo.pairRules.map((pr) => ({
+  // relationship rules (groups of 2+)
+  if (demo.groupRules && demo.groupRules.length) {
+    const { error: prErr } = await supabase.from("relationship_rules").insert(
+      demo.groupRules.map((g) => ({
         project_id: projectId,
-        person_a: mapPerson(pr.a),
-        person_b: mapPerson(pr.b),
-        kind: kindMap[pr.kind],
-        weight: pr.weight ?? 1,
-        is_hard: !!pr.hard,
+        kind: g.kind,
+        member_ids: g.members.map(mapPerson),
+        strength: g.strength ?? 2,
+        max_together: g.maxTogether ?? null,
+        is_hard: !!g.hard,
       })),
     );
     if (prErr) throw prErr;

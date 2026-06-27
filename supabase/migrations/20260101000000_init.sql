@@ -116,19 +116,20 @@ create table if not exists public.availability (
   unique (person_id, the_date, shift_def_id)
 );
 
--- ========================= PAIRING_RULES ===================================
-create table if not exists public.pairing_rules (
-  id         uuid primary key default gen_random_uuid(),
-  project_id uuid not null references public.projects(id) on delete cascade,
-  owner_id   uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  person_a   uuid not null references public.people(id) on delete cascade,
-  person_b   uuid not null references public.people(id) on delete cascade,
-  kind       text not null check (kind in ('want_together','avoid_together','never_alone')),
-  weight     int  not null default 1,
-  is_hard    boolean not null default false,
-  created_at timestamptz not null default now(),
-  check (person_a <> person_b),
-  unique (project_id, person_a, person_b, kind)
+-- ====================== RELATIONSHIP_RULES =================================
+-- Rules over 2+ people. member_ids holds the group; a 3+ group applies to
+-- every pair within it. kind: together (prefer same room, frequency set by
+-- strength 1-3), apart (prefer different rooms), never_alone (hard).
+create table if not exists public.relationship_rules (
+  id           uuid primary key default gen_random_uuid(),
+  project_id   uuid not null references public.projects(id) on delete cascade,
+  owner_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  kind         text not null check (kind in ('together','apart','never_alone')),
+  member_ids   uuid[] not null,
+  strength     int  not null default 2 check (strength between 1 and 3),
+  max_together int,
+  is_hard      boolean not null default false,
+  created_at   timestamptz not null default now()
 );
 
 -- =========================== SCHEDULES =====================================
@@ -184,7 +185,7 @@ declare t text;
 begin
   foreach t in array array[
     'projects','people','rooms','shift_defs','availability',
-    'pairing_rules','schedules','assignments'
+    'relationship_rules','schedules','assignments'
   ] loop
     execute format('drop trigger if exists trg_set_owner_%1$s on public.%1$s;', t);
     execute format(
@@ -194,7 +195,7 @@ begin
 
   -- same-owner project check on every child of projects
   foreach t in array array[
-    'people','rooms','shift_defs','availability','pairing_rules','schedules','assignments'
+    'people','rooms','shift_defs','availability','relationship_rules','schedules','assignments'
   ] loop
     execute format('drop trigger if exists trg_owns_project_%1$s on public.%1$s;', t);
     execute format(
@@ -214,7 +215,7 @@ declare t text;
 begin
   foreach t in array array[
     'projects','people','rooms','shift_defs','availability',
-    'pairing_rules','schedules','assignments'
+    'relationship_rules','schedules','assignments'
   ] loop
     execute format('alter table public.%I enable row level security;', t);
     execute format('alter table public.%I force  row level security;', t);

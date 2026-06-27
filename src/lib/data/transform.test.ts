@@ -46,8 +46,9 @@ describe("assembleScheduleInput", () => {
       created_at: "",
     },
     people: [
-      { id: "a", project_id: "p", full_name: "A", is_difficult: false },
-      { id: "b", project_id: "p", full_name: "B", is_difficult: true },
+      { id: "a", project_id: "p", full_name: "A", is_difficult: false, target_total_duties: null },
+      { id: "b", project_id: "p", full_name: "B", is_difficult: true, target_total_duties: 5 },
+      { id: "c", project_id: "p", full_name: "C", is_difficult: false, target_total_duties: null },
     ],
     rooms: [
       { id: "r2", project_id: "p", name: "R2", capacity: 2, is_two_person_undesirable: true, sort_order: 1 },
@@ -56,12 +57,13 @@ describe("assembleScheduleInput", () => {
     shifts: [
       { id: "s", project_id: "p", name: "S", start_time: "08:00:00", duration_minutes: 1440, is_night: false, sort_order: 0 },
     ],
-    pairings: [
-      { id: "pr", project_id: "p", person_a: "a", person_b: "b", kind: "avoid_together", weight: 2, is_hard: true },
+    relationships: [
+      { id: "g1", project_id: "p", kind: "together", member_ids: ["a", "b", "c"], strength: 1, max_together: 5, is_hard: false },
+      { id: "g2", project_id: "p", kind: "never_alone", member_ids: ["a", "b"], strength: 2, max_together: null, is_hard: true },
     ],
     availability: [
       { id: "av", project_id: "p", person_id: "a", the_date: "2026-07-04", shift_def_id: null, kind: "unavailable" },
-      { id: "av2", project_id: "p", person_id: "b", the_date: "2026-07-04", shift_def_id: null, kind: "prefer_off" },
+      { id: "av2", project_id: "p", person_id: "c", the_date: "2026-07-07", shift_def_id: null, kind: "prefer_off" },
     ],
   };
   const input = assembleScheduleInput(data);
@@ -73,13 +75,26 @@ describe("assembleScheduleInput", () => {
     expect(input.rooms.map((r) => r.id)).toEqual(["r1", "r2"]);
     expect(input.rooms[1].twoPersonUndesirable).toBe(true);
   });
-  it("maps difficult flag and pairing kind", () => {
+  it("maps difficult flag and per-person target duties", () => {
     expect(input.people[1].isDifficult).toBe(true);
-    expect(input.pairRules![0]).toMatchObject({ a: "a", b: "b", kind: "avoid", weight: 2, hard: true });
+    expect(input.people[1].targetDuties).toBe(5);
+    expect(input.people[0].targetDuties).toBeUndefined();
   });
-  it("only treats kind='unavailable' as a hard day off", () => {
+  it("maps group rules (members, kind, strength, cap, hard)", () => {
+    expect(input.groupRules).toHaveLength(2);
+    expect(input.groupRules![0]).toMatchObject({
+      members: ["a", "b", "c"],
+      kind: "together",
+      strength: 1,
+      maxTogether: 5,
+    });
+    expect(input.groupRules![1]).toMatchObject({ kind: "never_alone", hard: true });
+  });
+  it("splits availability into hard unavailable vs soft prefer-off", () => {
     expect(input.unavailability).toHaveLength(1);
     expect(input.unavailability![0]).toMatchObject({ personId: "a", date: "2026-07-04" });
+    expect(input.preferOff).toHaveLength(1);
+    expect(input.preferOff![0]).toMatchObject({ personId: "c", date: "2026-07-07" });
   });
   it("carries rest + max-per-day from the project", () => {
     expect(input.restHoursMin).toBe(24);

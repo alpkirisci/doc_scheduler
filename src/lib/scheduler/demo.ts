@@ -42,10 +42,13 @@ export function buildDemoInput(): ScheduleInput {
     // person being unavailable makes a day impossible to fill (the engine will
     // say so). Unavailability/days-off shine when the pool is larger than the
     // daily slots; see the rotation scenario in scripts/validate.ts.
-    pairRules: [
-      { a: "p1", b: "p3", kind: "want", weight: 2 }, // Ayşe wants Zeynep more
-      { a: "p4", b: "p6", kind: "avoid", weight: 1 }, // Can avoids Burak
-      { a: "p5", b: "p9", kind: "never_alone" }, // Elif never alone w/ Ahmet Berk
+    groupRules: [
+      // Ayşe, Zeynep & Can enjoy working together — but NOT always (~half the time)
+      { members: ["p1", "p3", "p4"], kind: "together", strength: 2 },
+      // Can & Burak prefer to stay apart
+      { members: ["p4", "p6"], kind: "apart", strength: 2 },
+      // Elif must never be the only other person in a room with Ahmet Berk
+      { members: ["p5", "p9"], kind: "never_alone" },
     ],
     restHoursMin: 24,
     maxDutiesPerDay: 1,

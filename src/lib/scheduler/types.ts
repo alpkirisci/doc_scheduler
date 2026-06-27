@@ -32,23 +32,28 @@ export interface Person {
   name: string;
   /** Flag "hard to work with" people; exposure to them is shared equally. */
   isDifficult?: boolean;
+  /** Optional per-person duty target (e.g. part-timers / seniors do fewer). */
+  targetDuties?: number;
 }
 
-export type PairKind = "want" | "avoid" | "never_alone";
+export type RelationshipKind = "together" | "apart" | "never_alone";
 
 /**
- * A relationship rule between two people.
- *  - want:        soft reward for sharing a room
- *  - avoid:       soft penalty for sharing a room (hard => never share)
- *  - never_alone: HARD — a & b may never be the only two people in a room
+ * A relationship rule over 2 OR MORE people (a rule with 3+ members applies to
+ * every pair within the group).
+ *  - together:    prefer to share a room, but NOT always — `strength` sets how
+ *                 often (light ~25%, medium ~50%, strong ~85% of their shifts).
+ *  - apart:       prefer NOT to share a room (strength sets how strongly).
+ *  - never_alone: HARD — these people may never be the only ones in a room.
  */
-export interface PairRule {
-  a: string;
-  b: string;
-  kind: PairKind;
-  /** Soft strength (defaults to 1). Ignored for never_alone (always hard). */
-  weight?: number;
-  /** For want/avoid: promote to a hard constraint. */
+export interface GroupRule {
+  members: string[];
+  kind: RelationshipKind;
+  /** 1 = light, 2 = medium, 3 = strong. Default 2. */
+  strength?: number;
+  /** Optional cap: members shouldn't share more than this many shifts. */
+  maxTogether?: number;
+  /** Promote to a hard constraint (for "apart": never share a room). */
   hard?: boolean;
 }
 
@@ -70,10 +75,12 @@ export interface Weights {
   expVar: number;
   /** Crush the worst-case difficult-colleague exposure (max term, pain #3). */
   expMax: number;
-  /** Penalty per shift an "avoid" pair shares a room (pain #2). */
-  avoid: number;
-  /** Reward per shift a "want" pair shares a room (pain #2). */
-  want: number;
+  /** How strongly to hit each "together" rule's target frequency. */
+  together: number;
+  /** Penalty per shift an "apart" pair shares a room. */
+  apart: number;
+  /** Penalty for a duty landing on a "prefer day off" slot. */
+  preferOff: number;
   /** Penalty per undesirable 2-person room actually staffed by 2 (pain #4). */
   twoRoom: number;
   /** Penalty for clustering a person's duties tighter than the ideal rhythm. */
@@ -87,11 +94,12 @@ export const DEFAULT_WEIGHTS: Weights = {
   expVar: 120,
   room: 100,
   load: 80,
+  apart: 40,
   night: 30,
-  avoid: 40,
-  want: 20,
-  spacing: 8,
+  preferOff: 25,
+  together: 22,
   twoRoom: 10,
+  spacing: 8,
 };
 
 /** Everything the engine needs to produce a schedule. */
@@ -102,7 +110,9 @@ export interface ScheduleInput {
   /** The dates duties occur on, ISO "YYYY-MM-DD". Each gets every shift. */
   dutyDates: string[];
   unavailability?: Unavailability[];
-  pairRules?: PairRule[];
+  /** Soft "prefer not to work" days (a nudge, vs hard unavailable). */
+  preferOff?: Unavailability[];
+  groupRules?: GroupRule[];
   /** Minimum rest (hours) between a person's consecutive shifts. Default 24. */
   restHoursMin?: number;
   /** Max duties a person may do in one calendar day. Default 1 (no 24h chains). */
@@ -153,9 +163,9 @@ export interface FairnessReport {
     roomMax: number;
     exposure: number;
   };
-  avoidViolations: number;
+  apartShared: number;
   neverAloneViolations: number;
-  wantSatisfied: number;
+  togetherShared: number;
   twoRoomCount: number;
   /** Contribution of each objective term, for the "why" panel. */
   breakdown: Record<string, number>;

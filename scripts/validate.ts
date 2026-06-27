@@ -69,8 +69,8 @@ function runScenario(label: string, input: ScheduleInput, limits: Limits): strin
       `diff-exposure=${rep.spreads.exposure}`,
   );
   console.log(
-    `  rules: neverAloneViol=${rep.neverAloneViolations}  avoidShared=${rep.avoidViolations}  ` +
-      `wantShared=${rep.wantSatisfied}  2-rooms=${rep.twoRoomCount}`,
+    `  rules: neverAloneViol=${rep.neverAloneViolations}  apartShared=${rep.apartShared}  ` +
+      `togetherShared=${rep.togetherShared}  2-rooms=${rep.twoRoomCount}`,
   );
 
   // availability respected?
@@ -129,10 +129,10 @@ const bInput: ScheduleInput = {
     { personId: "b1", date: bDates[3] },
     { personId: "b5", date: bDates[7] },
   ],
-  pairRules: [
-    { a: "b2", b: "b3", kind: "want", weight: 2 },
-    { a: "b4", b: "b6", kind: "avoid", weight: 1 },
-    { a: "b7", b: "b12", kind: "never_alone" },
+  groupRules: [
+    { members: ["b2", "b3", "b4"], kind: "together", strength: 2 },
+    { members: ["b4", "b6"], kind: "apart", strength: 2 },
+    { members: ["b7", "b12"], kind: "never_alone" },
   ],
   restHoursMin: 12,
   maxDutiesPerDay: 1,
