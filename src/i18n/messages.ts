@@ -36,6 +36,7 @@ export const en = {
     wantShared: "Want-pair shared",
     twoRooms: "2-person rooms",
     why: "Why this is fair",
+    scheduleGrid: "Schedule",
   },
   fields: {
     room: "Room",
@@ -111,6 +112,10 @@ export const en = {
     savedSchedules: "Saved schedules",
     none: "None yet",
     deleteSchedule: "Delete",
+    availability: "Days off",
+    addDayOff: "Add day off",
+    view: "View",
+    close: "Close",
   },
 };
 
@@ -149,6 +154,7 @@ export const tr: Messages = {
     wantShared: "İstenen çift birlikte",
     twoRooms: "2 kişilik odalar",
     why: "Neden adil",
+    scheduleGrid: "Çizelge",
   },
   fields: {
     room: "Oda",
@@ -224,6 +230,10 @@ export const tr: Messages = {
     savedSchedules: "Kayıtlı çizelgeler",
     none: "Henüz yok",
     deleteSchedule: "Sil",
+    availability: "İzinli günler",
+    addDayOff: "İzin ekle",
+    view: "Görüntüle",
+    close: "Kapat",
   },
 };
 

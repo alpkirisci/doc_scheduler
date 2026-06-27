@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/i18n/I18nProvider";
 import type { ScheduleInput, SolveResult } from "@/lib/scheduler/types";
+import { ScheduleGrid } from "@/components/ScheduleGrid";
 
 export function ScheduleResult({
   input,
@@ -14,6 +15,7 @@ export function ScheduleResult({
 }) {
   const { t } = useI18n();
   const rep = result.report;
+  const nameById = Object.fromEntries(input.people.map((p) => [p.id, p.name]));
   const scoreColor =
     rep.fairnessScore >= 85
       ? "text-emerald-600"
@@ -43,6 +45,13 @@ export function ScheduleResult({
           </ul>
         </div>
       )}
+
+      <ScheduleGrid
+        rooms={input.rooms}
+        shifts={input.shifts}
+        nameById={nameById}
+        assignments={result.assignments}
+      />
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
         <h3 className="border-b border-slate-100 px-4 py-3 font-semibold">{t.result.roomMatrix}</h3>

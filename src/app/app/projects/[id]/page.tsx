@@ -5,14 +5,17 @@ import { useParams } from "next/navigation";
 import { useI18n } from "@/i18n/I18nProvider";
 import { AppNav } from "@/components/AppNav";
 import { ScheduleResult } from "@/components/ScheduleResult";
+import { ScheduleGrid } from "@/components/ScheduleGrid";
 import { useSolver } from "@/lib/scheduler/useSolver";
-import type { ScheduleInput, SolveResult } from "@/lib/scheduler/types";
+import type { Assignment, ScheduleInput, SolveResult } from "@/lib/scheduler/types";
 import { downloadScheduleXlsx } from "@/lib/export/xlsx";
 import {
   applyShiftPattern,
   deleteRow,
   getProject,
+  getScheduleAssignments,
   insertRow,
+  listAvailability,
   listPairings,
   listPeople,
   listRooms,
@@ -21,6 +24,7 @@ import {
   loadScheduleInput,
   saveSchedule,
   updateProject,
+  type AvailabilityRow,
   type PairingRow,
   type PersonRow,
   type ProjectRow,
@@ -42,7 +46,9 @@ export default function ProjectPage() {
   const [rooms, setRooms] = useState<RoomRow[]>([]);
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [pairings, setPairings] = useState<PairingRow[]>([]);
+  const [availability, setAvailability] = useState<AvailabilityRow[]>([]);
   const [schedules, setSchedules] = useState<ScheduleRow[]>([]);
+  const [viewing, setViewing] = useState<{ label: string; assignments: Assignment[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [genInput, setGenInput] = useState<ScheduleInput | null>(null);
@@ -54,12 +60,13 @@ export default function ProjectPage() {
 
   const reload = useCallback(async () => {
     try {
-      const [pr, pe, ro, sh, pa, sc] = await Promise.all([
+      const [pr, pe, ro, sh, pa, av, sc] = await Promise.all([
         getProject(id),
         listPeople(id),
         listRooms(id),
         listShifts(id),
         listPairings(id),
+        listAvailability(id),
         listSchedules(id),
       ]);
       setProject(pr);
@@ -67,6 +74,7 @@ export default function ProjectPage() {
       setRooms(ro);
       setShifts(sh);
       setPairings(pa);
+      setAvailability(av);
       setSchedules(sc);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -134,6 +142,26 @@ export default function ProjectPage() {
     }
   }
 
+  async function viewSchedule(scheduleId: string, label: string) {
+    try {
+      const assignments = await getScheduleAssignments(scheduleId);
+      setViewing({ label, assignments });
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  const nameById = Object.fromEntries(people.map((p) => [p.id, p.full_name]));
+  const gridRooms = rooms
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((r) => ({ id: r.id, name: r.name, capacity: r.capacity }));
+  const gridShifts = shifts
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((s) => ({ id: s.id, name: s.name }));
+
   if (!project) {
     return (
       <>
@@ -150,6 +178,21 @@ export default function ProjectPage() {
         <h1 className="text-2xl font-bold">{project.name}</h1>
         {error && <p className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
+        {viewing && (
+          <section className="space-y-3 rounded-xl border border-slate-300 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">{viewing.label}</h2>
+              <button
+                onClick={() => setViewing(null)}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+              >
+                {t.proj.close}
+              </button>
+            </div>
+            <ScheduleGrid rooms={gridRooms} shifts={gridShifts} nameById={nameById} assignments={viewing.assignments} />
+          </section>
+        )}
+
         <SettingsCard project={project} onSave={async (patch) => { await updateProject(id, patch); await reload(); }} />
 
         <div className="grid gap-6 lg:grid-cols-2">
@@ -157,6 +200,7 @@ export default function ProjectPage() {
           <RoomsCard rooms={rooms} onAdd={(r) => add("rooms", { project_id: id, sort_order: rooms.length, ...r })} onRemove={(rid) => remove("rooms", rid)} />
           <ShiftsCard shifts={shifts} onApplyPattern={applyPattern} onAdd={(r) => add("shift_defs", { project_id: id, sort_order: shifts.length, ...r })} onRemove={(rid) => remove("shift_defs", rid)} />
           <RulesCard people={people} pairings={pairings} onAdd={(r) => add("pairing_rules", { project_id: id, ...r })} onRemove={(rid) => remove("pairing_rules", rid)} />
+          <AvailabilityCard people={people} items={availability} onAdd={(r) => add("availability", { project_id: id, ...r })} onRemove={(rid) => remove("availability", rid)} />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -181,7 +225,7 @@ export default function ProjectPage() {
 
         {result && genInput && <ScheduleResult input={genInput} result={result} ms={ms} />}
 
-        <SchedulesCard schedules={schedules} onRemove={(sid) => remove("schedules", sid)} />
+        <SchedulesCard schedules={schedules} onView={viewSchedule} onRemove={(sid) => remove("schedules", sid)} />
       </main>
     </>
   );
@@ -368,7 +412,34 @@ function RulesCard({ people, pairings, onAdd, onRemove }: { people: PersonRow[];
   );
 }
 
-function SchedulesCard({ schedules, onRemove }: { schedules: ScheduleRow[]; onRemove: (id: string) => void }) {
+function AvailabilityCard({ people, items, onAdd, onRemove }: { people: PersonRow[]; items: AvailabilityRow[]; onAdd: (r: { person_id: string; the_date: string; kind: string }) => void; onRemove: (id: string) => void }) {
+  const { t } = useI18n();
+  const [person, setPerson] = useState("");
+  const [date, setDate] = useState("");
+  const nameOf = (pid: string) => people.find((p) => p.id === pid)?.full_name ?? "?";
+  return (
+    <Card title={`${t.proj.availability} (${items.length})`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <select value={person} onChange={(e) => setPerson(e.target.value)} className={inputCls}>
+          <option value="">{t.proj.people}</option>
+          {people.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+        </select>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+        <button onClick={() => { if (person && date) { onAdd({ person_id: person, the_date: date, kind: "unavailable" }); setDate(""); } }} className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700">{t.proj.add}</button>
+      </div>
+      <ul className="mt-3 space-y-1 text-sm">
+        {items.map((a) => (
+          <li key={a.id} className="flex items-center justify-between rounded border border-slate-100 px-3 py-1.5">
+            <span>{nameOf(a.person_id)} · {a.the_date}</span>
+            <button onClick={() => onRemove(a.id)} className="text-xs text-slate-400 hover:text-rose-600">{t.proj.remove}</button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function SchedulesCard({ schedules, onView, onRemove }: { schedules: ScheduleRow[]; onView: (id: string, label: string) => void; onRemove: (id: string) => void }) {
   const { t } = useI18n();
   return (
     <Card title={t.proj.savedSchedules}>
@@ -379,7 +450,10 @@ function SchedulesCard({ schedules, onRemove }: { schedules: ScheduleRow[]; onRe
           {schedules.map((s) => (
             <li key={s.id} className="flex items-center justify-between rounded border border-slate-100 px-3 py-1.5">
               <span>{s.label ?? s.id.slice(0, 8)} · {t.result.fairnessScore}: {s.fairness_score ?? "?"}/100</span>
-              <button onClick={() => onRemove(s.id)} className="text-xs text-slate-400 hover:text-rose-600">{t.proj.deleteSchedule}</button>
+              <span className="flex gap-3">
+                <button onClick={() => onView(s.id, s.label ?? s.id.slice(0, 8))} className="text-xs text-slate-500 hover:text-slate-900">{t.proj.view}</button>
+                <button onClick={() => onRemove(s.id)} className="text-xs text-slate-400 hover:text-rose-600">{t.proj.deleteSchedule}</button>
+              </span>
             </li>
           ))}
         </ul>
