@@ -242,3 +242,15 @@ begin new.updated_at := now(); return new; end $$;
 drop trigger if exists trg_projects_touch on public.projects;
 create trigger trg_projects_touch before update on public.projects
   for each row execute function public.touch_updated_at();
+
+-- ============================= GRANTS ======================================
+-- Supabase reaches tables through the anon/authenticated roles; the RLS
+-- policies above restrict WHICH rows each user can touch. Without these
+-- table-level grants the API returns "permission denied for table ...".
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to anon, authenticated, service_role;
+grant all on all sequences in schema public to anon, authenticated, service_role;
+grant all on all routines in schema public to anon, authenticated, service_role;
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines to anon, authenticated, service_role;
