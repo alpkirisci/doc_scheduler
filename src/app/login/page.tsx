@@ -5,8 +5,19 @@ import Link from "next/link";
 import { CalendarHeart, Loader2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { errorMessage } from "@/lib/errors";
 import { Button, inputClass } from "@/components/ui";
 import { LangToggle } from "@/components/LangToggle";
+import type { Messages } from "@/i18n/messages";
+
+function localizeAuthError(err: unknown, t: Messages): string {
+  const m = errorMessage(err).toLowerCase();
+  if (m.includes("not confirmed")) return t.auth.errNotConfirmed;
+  if (m.includes("invalid login") || m.includes("invalid credentials")) return t.auth.errInvalid;
+  if (m.includes("already registered") || m.includes("already exists")) return t.auth.errExists;
+  if (m.includes("rate limit")) return t.auth.errRate;
+  return errorMessage(err);
+}
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -27,8 +38,23 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       if (mode === "up") {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        });
         if (error) throw error;
+        // Confirmation OFF -> a session is returned, go straight in.
+        if (data.session) {
+          window.location.assign("/app");
+          return;
+        }
+        // Email already registered (Supabase returns a user with no identities).
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          setInfo(t.auth.accountExists);
+          setMode("in");
+          return;
+        }
         setInfo(t.auth.checkEmail);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -37,7 +63,7 @@ export default function LoginPage() {
         window.location.assign("/app");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(localizeAuthError(err, t));
     } finally {
       setBusy(false);
     }
@@ -74,7 +100,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={inputClass + " mt-1"}
-              placeholder="ornek@hastane.com"
+              placeholder={t.auth.emailPlaceholder}
             />
           </label>
           <label className="block">

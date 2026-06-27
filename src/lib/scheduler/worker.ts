@@ -3,12 +3,13 @@
 
 import { solve } from "./engine";
 import type { ScheduleInput } from "./types";
+import { errorMessage } from "@/lib/errors";
 
 self.onmessage = (e: MessageEvent<ScheduleInput>) => {
   try {
     const result = solve(e.data);
     (self as DedicatedWorkerGlobalScope).postMessage({ ok: true, result });
   } catch (err) {
-    (self as DedicatedWorkerGlobalScope).postMessage({ ok: false, error: String(err) });
+    (self as DedicatedWorkerGlobalScope).postMessage({ ok: false, error: errorMessage(err) });
   }
 };

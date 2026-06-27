@@ -11,7 +11,12 @@ export const en = {
     heroTitle: "Fair schedules your whole team will trust.",
     heroSubtitle:
       "Balance rooms, nights and that one hard-to-pair colleague — set who works with whom, then export to Excel. In Turkish or English.",
-    createOwn: "Create your own",
+    createOwn: "Create your schedule",
+    howTitle: "How it works",
+    step1: "Create an account and a project.",
+    step2: "Add your team, rooms and a shift pattern.",
+    step3: "Set preferences — who works with whom, and days off.",
+    step4: "Generate a fair schedule and download it as Excel.",
   },
 
   features: {
@@ -21,16 +26,6 @@ export const en = {
     excel: "Excel export",
     bilingual: "Turkish & English",
     private: "Private per user",
-  },
-
-  demo: {
-    title: "Try the demo",
-    subtitle: "9 residents · rooms 1/2/3/3 · 21 duty days · one tricky colleague",
-    loadDemo: "Load demo data",
-    generate: "Generate",
-    generating: "Generating…",
-    regenerate: "Regenerate",
-    downloadXlsx: "Download Excel",
   },
 
   result: {
@@ -56,6 +51,7 @@ export const en = {
     signInTitle: "Sign in",
     signUpTitle: "Create account",
     email: "Email",
+    emailPlaceholder: "you@hospital.com",
     password: "Password",
     signIn: "Sign in",
     signUp: "Sign up",
@@ -63,6 +59,11 @@ export const en = {
     needAccount: "Need an account? Sign up",
     haveAccount: "Already have an account? Sign in",
     checkEmail: "Check your email to confirm your account, then sign in.",
+    accountExists: "This email is already registered — please sign in.",
+    errInvalid: "Wrong email or password.",
+    errNotConfirmed: "Your email isn't confirmed yet. Check your inbox, or ask the owner to turn off email confirmation.",
+    errExists: "This email is already registered. Try signing in.",
+    errRate: "Too many attempts. Please wait a moment and try again.",
     notConfigured: "Supabase is not configured yet. Add the env vars to enable accounts.",
   },
 
@@ -74,12 +75,11 @@ export const en = {
     create: "Create",
     creating: "Creating…",
     noProjects: "No projects yet",
-    noProjectsHint: "Create one above, or load the demo to see how it works.",
+    noProjectsHint: "Create one above to get started.",
     open: "Open",
     delete: "Delete",
     confirmDelete: "Delete this project and all its data?",
     signOut: "Sign out",
-    backToDemo: "Demo",
   },
 
   proj: {
@@ -119,6 +119,7 @@ export const en = {
     save: "Save",
     saving: "Saving…",
     saved: "Saved ✓",
+    downloadXlsx: "Download Excel",
     savedSchedules: "Saved schedules",
     none: "None yet",
     deleteSchedule: "Delete",
@@ -160,7 +161,12 @@ export const tr: Messages = {
     heroTitle: "Tüm ekibin güveneceği adil çizelgeler.",
     heroSubtitle:
       "Odaları, geceleri ve o zor kişiyi dengele; kimin kiminle çalışacağını belirle ve Excel'e aktar. Türkçe veya İngilizce.",
-    createOwn: "Kendi projeni oluştur",
+    createOwn: "Çizelgeni oluştur",
+    howTitle: "Nasıl çalışır",
+    step1: "Bir hesap ve proje oluştur.",
+    step2: "Ekibini, odaları ve vardiya düzenini ekle.",
+    step3: "Tercihleri belirle — kim kiminle çalışsın, izin günleri.",
+    step4: "Adil bir çizelge oluştur ve Excel olarak indir.",
   },
 
   features: {
@@ -170,16 +176,6 @@ export const tr: Messages = {
     excel: "Excel'e aktarım",
     bilingual: "Türkçe & İngilizce",
     private: "Kişiye özel & gizli",
-  },
-
-  demo: {
-    title: "Demoyu dene",
-    subtitle: "9 asistan · 1/2/3/3 oda · 21 nöbet günü · bir de zor bir kişi",
-    loadDemo: "Demo verisini yükle",
-    generate: "Oluştur",
-    generating: "Oluşturuluyor…",
-    regenerate: "Yeniden oluştur",
-    downloadXlsx: "Excel indir",
   },
 
   result: {
@@ -205,6 +201,7 @@ export const tr: Messages = {
     signInTitle: "Giriş yap",
     signUpTitle: "Hesap oluştur",
     email: "E-posta",
+    emailPlaceholder: "ornek@hastane.com",
     password: "Parola",
     signIn: "Giriş yap",
     signUp: "Kayıt ol",
@@ -212,6 +209,11 @@ export const tr: Messages = {
     needAccount: "Hesabın yok mu? Kayıt ol",
     haveAccount: "Zaten hesabın var mı? Giriş yap",
     checkEmail: "Hesabını onaylamak için e-postanı kontrol et, sonra giriş yap.",
+    accountExists: "Bu e-posta zaten kayıtlı — lütfen giriş yap.",
+    errInvalid: "E-posta veya parola hatalı.",
+    errNotConfirmed: "E-postan henüz onaylanmadı. Gelen kutunu kontrol et ya da e-posta onayını kapat.",
+    errExists: "Bu e-posta zaten kayıtlı. Giriş yapmayı dene.",
+    errRate: "Çok fazla deneme. Lütfen biraz bekleyip tekrar dene.",
     notConfigured: "Supabase henüz yapılandırılmadı. Hesaplar için ortam değişkenlerini ekleyin.",
   },
 
@@ -223,12 +225,11 @@ export const tr: Messages = {
     create: "Oluştur",
     creating: "Oluşturuluyor…",
     noProjects: "Henüz proje yok",
-    noProjectsHint: "Yukarıdan bir tane oluştur ya da nasıl çalıştığını görmek için demoyu yükle.",
+    noProjectsHint: "Başlamak için yukarıdan bir tane oluştur.",
     open: "Aç",
     delete: "Sil",
     confirmDelete: "Bu proje ve tüm verileri silinsin mi?",
     signOut: "Çıkış yap",
-    backToDemo: "Demo",
   },
 
   proj: {
@@ -268,6 +269,7 @@ export const tr: Messages = {
     save: "Kaydet",
     saving: "Kaydediliyor…",
     saved: "Kaydedildi ✓",
+    downloadXlsx: "Excel indir",
     savedSchedules: "Kayıtlı çizelgeler",
     none: "Henüz yok",
     deleteSchedule: "Sil",

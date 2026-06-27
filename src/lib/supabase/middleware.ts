@@ -37,6 +37,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     redirect.pathname = "/login";
     return NextResponse.redirect(redirect);
   }
+  if (user && path === "/login") {
+    const redirect = request.nextUrl.clone();
+    redirect.pathname = "/app";
+    return NextResponse.redirect(redirect);
+  }
 
   return response;
 }

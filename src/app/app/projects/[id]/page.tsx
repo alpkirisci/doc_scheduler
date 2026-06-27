@@ -26,6 +26,7 @@ import { Avatar, Button, Card, Field, SectionHeader, Stepper, Toggle, inputClass
 import { useSolver } from "@/lib/scheduler/useSolver";
 import type { Assignment, ScheduleInput, SolveResult } from "@/lib/scheduler/types";
 import { downloadScheduleXlsx } from "@/lib/export/xlsx";
+import { errorMessage } from "@/lib/errors";
 import { eachNthDate } from "@/lib/data/transform";
 import {
   applyShiftPattern,
@@ -93,7 +94,7 @@ export default function ProjectPage() {
       setAvailability(av);
       setSchedules(sc);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     }
   }, [id]);
   useEffect(() => {
@@ -106,12 +107,17 @@ export default function ProjectPage() {
       await insertRow(table, row);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     }
   }
   async function remove(table: string, rowId: string) {
-    await deleteRow(table, rowId);
-    await reload();
+    setError(null);
+    try {
+      await deleteRow(table, rowId);
+      await reload();
+    } catch (err) {
+      setError(errorMessage(err));
+    }
   }
   async function applyPattern(p: ShiftPattern) {
     if (!confirm(t.proj.patternConfirm)) return;
@@ -119,7 +125,7 @@ export default function ProjectPage() {
       await applyShiftPattern(id, p, locale);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     }
   }
   async function generate() {
@@ -135,7 +141,7 @@ export default function ProjectPage() {
       setResult(res);
       setMs(Math.round(performance.now() - t0));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -148,7 +154,7 @@ export default function ProjectPage() {
       setSavedMsg(true);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -159,7 +165,7 @@ export default function ProjectPage() {
       setViewing({ label, assignments });
       if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     }
   }
 
@@ -195,7 +201,7 @@ export default function ProjectPage() {
                   <Save className="h-4 w-4" /> {saving ? t.proj.saving : savedMsg ? t.proj.saved : t.proj.save}
                 </Button>
                 <Button variant="secondary" onClick={() => genInput && downloadScheduleXlsx(genInput, result, locale)}>
-                  <Download className="h-4 w-4" /> {t.demo.downloadXlsx}
+                  <Download className="h-4 w-4" /> {t.proj.downloadXlsx}
                 </Button>
               </>
             )}
