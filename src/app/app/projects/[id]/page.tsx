@@ -9,6 +9,7 @@ import { useSolver } from "@/lib/scheduler/useSolver";
 import type { ScheduleInput, SolveResult } from "@/lib/scheduler/types";
 import { downloadScheduleXlsx } from "@/lib/export/xlsx";
 import {
+  applyShiftPattern,
   deleteRow,
   getProject,
   insertRow,
@@ -25,6 +26,7 @@ import {
   type ProjectRow,
   type RoomRow,
   type ScheduleRow,
+  type ShiftPattern,
   type ShiftRow,
 } from "@/lib/data/queries";
 
@@ -122,6 +124,16 @@ export default function ProjectPage() {
     }
   }
 
+  async function applyPattern(p: ShiftPattern) {
+    if (!confirm(t.proj.patternConfirm)) return;
+    try {
+      await applyShiftPattern(id, p, locale);
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   if (!project) {
     return (
       <>
@@ -143,7 +155,7 @@ export default function ProjectPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <PeopleCard people={people} onAdd={(r) => add("people", { project_id: id, ...r })} onRemove={(rid) => remove("people", rid)} />
           <RoomsCard rooms={rooms} onAdd={(r) => add("rooms", { project_id: id, sort_order: rooms.length, ...r })} onRemove={(rid) => remove("rooms", rid)} />
-          <ShiftsCard shifts={shifts} onAdd={(r) => add("shift_defs", { project_id: id, sort_order: shifts.length, ...r })} onRemove={(rid) => remove("shift_defs", rid)} />
+          <ShiftsCard shifts={shifts} onApplyPattern={applyPattern} onAdd={(r) => add("shift_defs", { project_id: id, sort_order: shifts.length, ...r })} onRemove={(rid) => remove("shift_defs", rid)} />
           <RulesCard people={people} pairings={pairings} onAdd={(r) => add("pairing_rules", { project_id: id, ...r })} onRemove={(rid) => remove("pairing_rules", rid)} />
         </div>
 
@@ -268,7 +280,17 @@ function RoomsCard({ rooms, onAdd, onRemove }: { rooms: RoomRow[]; onAdd: (r: { 
   );
 }
 
-function ShiftsCard({ shifts, onAdd, onRemove }: { shifts: ShiftRow[]; onAdd: (r: { name: string; start_time: string; duration_minutes: number; is_night: boolean }) => void; onRemove: (id: string) => void }) {
+function ShiftsCard({
+  shifts,
+  onApplyPattern,
+  onAdd,
+  onRemove,
+}: {
+  shifts: ShiftRow[];
+  onApplyPattern: (p: ShiftPattern) => void;
+  onAdd: (r: { name: string; start_time: string; duration_minutes: number; is_night: boolean }) => void;
+  onRemove: (id: string) => void;
+}) {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [start, setStart] = useState("08:00");
@@ -276,6 +298,21 @@ function ShiftsCard({ shifts, onAdd, onRemove }: { shifts: ShiftRow[]; onAdd: (r
   const [night, setNight] = useState(false);
   return (
     <Card title={`${t.proj.shifts} (${shifts.length})`}>
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2">
+        <span className="text-xs font-medium text-slate-500">{t.proj.shiftPattern}:</span>
+        <button
+          onClick={() => onApplyPattern("oncall24")}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
+        >
+          {t.proj.p24}
+        </button>
+        <button
+          onClick={() => onApplyPattern("day_night")}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
+        >
+          {t.proj.pDayNight}
+        </button>
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t.proj.name} className={inputCls + " w-28"} />
         <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls} title={t.proj.startTime} />

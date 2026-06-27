@@ -250,6 +250,65 @@ export async function saveSchedule(
   return scheduleId;
 }
 
+// ----------------------------- shift presets -------------------------------
+export type ShiftPattern = "oncall24" | "day_night";
+
+/**
+ * One-click shift setup. Replaces the project's shifts with a preset and sets a
+ * sensible minimum rest. NOTE: replacing shifts removes assignments that used
+ * the old shifts (saved schedules become empty), so confirm in the UI first.
+ */
+export async function applyShiftPattern(
+  projectId: string,
+  pattern: ShiftPattern,
+  locale: "tr" | "en" = "tr",
+): Promise<void> {
+  const supabase = db();
+  const { error: delErr } = await supabase.from("shift_defs").delete().eq("project_id", projectId);
+  if (delErr) throw delErr;
+
+  const tr = locale === "tr";
+  let rows: object[];
+  let restHours: number;
+  if (pattern === "oncall24") {
+    rows = [
+      {
+        project_id: projectId,
+        name: tr ? "Nöbet" : "On-call",
+        start_time: "08:00:00",
+        duration_minutes: 1440,
+        is_night: false,
+        sort_order: 0,
+      },
+    ];
+    restHours = 24;
+  } else {
+    rows = [
+      {
+        project_id: projectId,
+        name: tr ? "Gündüz" : "Day",
+        start_time: "08:00:00",
+        duration_minutes: 720,
+        is_night: false,
+        sort_order: 0,
+      },
+      {
+        project_id: projectId,
+        name: tr ? "Gece" : "Night",
+        start_time: "20:00:00",
+        duration_minutes: 720,
+        is_night: true,
+        sort_order: 1,
+      },
+    ];
+    restHours = 12;
+  }
+
+  const { error } = await supabase.from("shift_defs").insert(rows);
+  if (error) throw error;
+  await supabase.from("projects").update({ rest_hours_min: restHours }).eq("id", projectId);
+}
+
 export async function listSchedules(projectId: string): Promise<ScheduleRow[]> {
   const { data, error } = await db()
     .from("schedules")
