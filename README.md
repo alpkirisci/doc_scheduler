@@ -163,11 +163,14 @@ kurulur; veriler Supabase ile **kullanıcıya özel ve gizlidir**. Demoyu deneme
 
 ## Status & roadmap
 
-✅ Scheduling engine (validated), demo UI, Excel export, i18n, DB schema, Vercel-ready build.
+✅ Scheduling engine (validated) · demo UI · Excel export · i18n (TR/EN) · DB schema with RLS
+· **Supabase email auth** · **dashboard (project CRUD)** · **project editors** (people, rooms,
+shifts, rules, settings) · **generate + save schedules** · one-click demo seeding ·
+Vercel-ready build.
 
-Next: full project CRUD UI (people/rooms/shifts/rules editors), Supabase auth pages, saving &
-comparing multiple generated schedules, and the full styled fairness report sheets. The
-engine and data model already support all of it.
+Next: per-person availability/days-off editor in the UI, comparing/pinning saved schedules,
+the full styled fairness report sheets (RAG status, data bars), and weight sliders for power
+users. The engine and data model already support these.
 
 ## License
 
