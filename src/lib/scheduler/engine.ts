@@ -569,7 +569,7 @@ export function construct(pb: Problem, rng: Rng): Int32Array {
           const tgtLoad = pb.personTarget[p] ?? pb.targetLoad;
           let key = (roomCount[p * R + r] - pb.targetRoom[r]) * 2 + 1;
           key += (load[p] - tgtLoad) * 0.5;
-          if (pb.preferOff[i * P + p]) key += 1.5;
+          if (pb.preferOff[i * P + p]) key += 50; // pick prefer-off people last
           const roomHasDifficult = curMembers[r].some((q) => pb.difficult[q]);
           if (roomHasDifficult && !pb.difficult[p]) key += exposure[p] * 1.0;
           for (const tp of pb.togetherPairs) {

@@ -109,6 +109,8 @@ export const en = {
     rooms: "Rooms",
     roomsSubtitle: "Where do they work, and how many per room?",
     capacity: "Capacity",
+    peopleNeeded: "People needed",
+    peopleUnit: "people",
     twoUndesirable: "Avoid leaving just 2 people",
     availability: "Days off",
     availabilitySubtitle: "Block dates, or mark a soft preference.",
@@ -148,6 +150,12 @@ export const en = {
     none: "No rules yet.",
     addPeopleFirst: "Add people first.",
     groupHint: "Pick 3+ people for a group rule (applies to every pair).",
+  },
+
+  common: {
+    cancel: "Cancel",
+    confirm: "Confirm",
+    areYouSure: "Are you sure?",
   },
 };
 
@@ -259,6 +267,8 @@ export const tr: Messages = {
     rooms: "Odalar",
     roomsSubtitle: "Nerede, oda başına kaç kişi?",
     capacity: "Kapasite",
+    peopleNeeded: "Kaç kişi",
+    peopleUnit: "kişi",
     twoUndesirable: "2 kişi kalmasından kaçın",
     availability: "İzin günleri",
     availabilitySubtitle: "Tarihleri engelle ya da tercih olarak işaretle.",
@@ -298,6 +308,12 @@ export const tr: Messages = {
     none: "Henüz kural yok.",
     addPeopleFirst: "Önce kişi ekle.",
     groupHint: "Grup kuralı için 3+ kişi seç (her ikiliye uygulanır).",
+  },
+
+  common: {
+    cancel: "İptal",
+    confirm: "Onayla",
+    areYouSure: "Emin misin?",
   },
 };
 

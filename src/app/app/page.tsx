@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarRange, FolderOpen, FolderPlus, Loader2, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { AppNav } from "@/components/AppNav";
 import { Button, Card, EmptyState, inputClass } from "@/components/ui";
 import { errorMessage } from "@/lib/errors";
@@ -12,6 +13,7 @@ import { createProject, deleteProject, listProjects, type ProjectRow } from "@/l
 export default function Dashboard() {
   const { t } = useI18n();
   const router = useRouter();
+  const confirm = useConfirm();
   const [projects, setProjects] = useState<ProjectRow[] | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,13 @@ export default function Dashboard() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm(t.app.confirmDelete)) return;
+    const ok = await confirm({
+      title: t.common.areYouSure,
+      message: t.app.confirmDelete,
+      danger: true,
+      confirmLabel: t.app.delete,
+    });
+    if (!ok) return;
     try {
       await deleteProject(id);
       await refresh();

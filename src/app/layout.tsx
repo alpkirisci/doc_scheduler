@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { I18nProvider } from "@/i18n/I18nProvider";
+import { ConfirmProvider } from "@/components/ConfirmProvider";
 
 export const metadata: Metadata = {
   title: "doc_scheduler — fair resident rosters",
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr">
       <body>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </I18nProvider>
       </body>
     </html>
   );

@@ -88,6 +88,13 @@ export async function insertRow<T extends object>(table: string, row: T): Promis
   const { error } = await db().from(table).insert(row);
   if (error) throw error;
 }
+
+/** Insert and return the created row (for optimistic UI without a full reload). */
+export async function insertReturning<R>(table: string, row: object): Promise<R> {
+  const { data, error } = await db().from(table).insert(row).select("*").single();
+  if (error) throw error;
+  return data as R;
+}
 export async function deleteRow(table: string, id: string): Promise<void> {
   const { error } = await db().from(table).delete().eq("id", id);
   if (error) throw error;

@@ -96,7 +96,7 @@ export const DEFAULT_WEIGHTS: Weights = {
   load: 80,
   apart: 40,
   night: 30,
-  preferOff: 25,
+  preferOff: 60,
   together: 22,
   twoRoom: 10,
   spacing: 8,
